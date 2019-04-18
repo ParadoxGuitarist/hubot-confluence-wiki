@@ -83,5 +83,5 @@ module.exports = (robot) ->
       message += "\n*#{i.content.title}* #{ConfluenceBaseURL}#{i.content._links.tinyui}\n>#{i.excerpt}" for i in result.results
       message = message.replace /@@@hl@@@|@@@endhl@@@/g, confluence_highlight
       message = message.replace /&hellip;/g, hellip
-      message += "\n_You could always try searches here:_ http://lmgtfy.com/?q=#{search_term.replace /(\s)/g, '+'} #{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}_"
+      message += "\n_You could always try searches here:_ http://lmgtfy.com/?q=#{search_term.replace /(\s)/g, '+'} #{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}"
       msg.send message
