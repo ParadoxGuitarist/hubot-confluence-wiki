@@ -14,10 +14,10 @@
 #   HUBOT_CONFLUENCE_HIGHLIGHT_MARKDOWN_REPLACEMENT - (optional) - Replace the @@@hl@@@ markdown with something else.
 #
 # Commands:
-#   hubot wiki <search term(s)> - Hubot provides pages 
+#   hubot wiki <search term(s)> - Hubot provides pages
 #
 # Notes:
-# See https://docs.atlassian.com/confluence/REST/latest/ for more info on available 
+# See https://docs.atlassian.com/confluence/REST/latest/ for more info on available
 #
 # Author:
 #   ParadoxGuitarist
@@ -28,6 +28,8 @@ confluence_host = process.env.HUBOT_CONFLUENCE_HOST
 confluence_context = process.env.HUBOT_CONFLUENCE_CONTEXT or ''
 confluence_protocol = process.env.HUBOT_CONFLUENCE_PROTOCOL or 'https'
 confluence_auth = process.env.HUBOT_CONFLUENCE_AUTH or 'basic'
+#Serch engine options are (https://www.google.com/search) (https://www.bing.com/search) (https://duckduckgo.com)
+confluence_search_engine = process.env.HUBOT_CONFLUENCE_SEARCH_ENGINE or 'http://lmgtfy.com'
 confluence_search_limit = process.env.HUBOT_CONFLUENCE_SEARCH_LIMIT or '5'
 confluence_heard_limit = process.env.HUBOT_CONFLUENCE_HEARD_LIMIT or '3'
 confluence_highlight = process.env.HUBOT_CONFLUENCE_HIGHLIGHT_MARKDOWN_REPLACEMENT or ''
@@ -67,21 +69,23 @@ module.exports = (robot) ->
       message = "Showing #{result.size} results: out of #{result.totalSize} - #{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}"
       message += "\n*#{i.content.title}* #{ConfluenceBaseURL}#{i.content._links.tinyui}\n>#{i.excerpt}" for i in result.results
       message = message.replace /@@@hl@@@|@@@endhl@@@/g, confluence_highlight
-      message = message.replace /&hellip;/g, hellip	
+      message = message.replace /&hellip;/g, hellip
       msg.send message
 
-  robot.hear /(?:how do i|how do you) (.*)$/i, (msg) ->
-    search_term = msg.match[1].replace(/\s(the |and |on |like |as |a )|\?|\,|\./g, ' ')
+  robot.hear /(how do (i|you)) (.+)(\?|\.|\,|\b)$/i, (msg) ->
+    search_term = msg.match[3].replace(/\s(the|and|on|like|as|a)\s|\?|\,|\./g, ' ')
     confluence_request msg, "/rest/api/search?#{authsuffix}&cql=(type=page)#{searchspace}AND(text~'#{search_term}')&limit=#{confluence_heard_limit}", (result) ->
       if result.error
         msg.send result.description
         return
-      if result.size == '0'
-        msg.send "Perhaps you should try this: http://lmgtfy.com/?q=#{search_term.replace /\s/g, '+'}"
+      if result.size == 0
+        msg.send "Perhaps you should try one of these: \n#{confluence_search_engine}?q=#{search_term.replace /\s/g, '+'}\n#{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}"
         return
       message = "Not sure I know how to do that, but this might help:"
       message += "\n*#{i.content.title}* #{ConfluenceBaseURL}#{i.content._links.tinyui}\n>#{i.excerpt}" for i in result.results
       message = message.replace /@@@hl@@@|@@@endhl@@@/g, confluence_highlight
       message = message.replace /&hellip;/g, hellip
-      message += "\n_You could always try searches here:_ http://lmgtfy.com/?q=#{search_term.replace /(\s)/g, '+'} #{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}_"
+      message += "\n_You could always try searches here:_"
+      message += "\n#{confluence_search_engine}?q=#{search_term.replace /(\s)/g, '+'}"
+      message += "\n#{result._links.base}/dosearchsite.action?cql=#{result.cqlQuery.replace /(\s)/g, '+'}"
       msg.send message
